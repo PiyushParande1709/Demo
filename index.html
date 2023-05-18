@@ -4,8 +4,28 @@
     <title>Color Picker</title>
     <style>
       /* Add your custom CSS styles here */
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: Arial, sans-serif;
+        text-align: center;
+      }
+
+      section {
+        max-width: 600px;
+        width: 90%;
+      }
+
       #camera-view {
         position: relative;
+        margin-bottom: 16px;
+      }
+
+      #video {
+        width: 100%;
+        height: auto;
       }
 
       #focus-dot {
@@ -17,6 +37,34 @@
         height: 10px;
         border-radius: 50%;
         background-color: red;
+      }
+
+      #color-display {
+        margin-bottom: 16px;
+        font-size: 24px;
+      }
+
+      .button {
+        display: inline-block;
+        padding: 12px 24px;
+        font-size: 18px;
+        font-weight: bold;
+        text-align: center;
+        text-decoration: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .button-primary {
+        background-color: #4caf50;
+        color: #ffffff;
+        border: none;
+      }
+
+      .button-secondary {
+        background-color: #f44336;
+        color: #ffffff;
+        border: none;
       }
     </style>
   </head>
@@ -31,7 +79,9 @@
       <button id="capture-button">Capture</button>
       <button id="share-button">Share</button>
       <button id="toggle-camera-button">Toggle Camera</button>
+      <button id="change-camera-button">Change Camera</button>
     </section>
+    
     <script>
       const colors = [
         { name: "Black", hex: "#000000" },
@@ -179,8 +229,9 @@
         // ...
       ];
 
+      let videoStream;
       let isCameraOn = false;
-      let videoStream = null;
+      let isFrontCamera = true;
 
       // Function to calculate the closest color match
       function getClosestColor(hex) {
@@ -302,16 +353,36 @@
         }
       }
 
-      // Function to toggle the camera on and off
+      // Function to toggle the camera on/off
       function toggleCamera() {
         const video = document.getElementById("video");
+
         if (isCameraOn) {
-          video.srcObject = null;
           videoStream.getTracks().forEach((track) => track.stop());
+          video.srcObject = null;
+          videoStream = null;
           isCameraOn = false;
         } else {
-          initializeCamera();
+          const videoConstraints = {
+            facingMode: isFrontCamera ? "user" : { exact: "environment" },
+          };
+
+          navigator.mediaDevices
+            .getUserMedia({ video: videoConstraints })
+            .then((stream) => {
+              video.srcObject = stream;
+              video.play();
+              videoStream = stream;
+              isCameraOn = true;
+            })
+            .catch((error) => console.error("Error accessing camera:", error));
         }
+      }
+
+      // Function to change the camera source
+      function changeCamera() {
+        isFrontCamera = !isFrontCamera;
+        toggleCamera();
       }
 
       // Event listeners
@@ -321,10 +392,16 @@
       const shareButton = document.getElementById("share-button");
       shareButton.addEventListener("click", handleShare);
 
+      // Event listener for toggle camera button
       const toggleCameraButton = document.getElementById(
         "toggle-camera-button"
       );
       toggleCameraButton.addEventListener("click", toggleCamera);
+      // Event listener for change camera button
+      const changeCameraButton = document.getElementById(
+        "change-camera-button"
+      );
+      changeCameraButton.addEventListener("click", changeCamera);
     </script>
   </body>
 </html>
